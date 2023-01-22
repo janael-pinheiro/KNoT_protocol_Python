@@ -1,0 +1,1 @@
+export AMQP_URL=amqp://knot:knot@localhost:5672

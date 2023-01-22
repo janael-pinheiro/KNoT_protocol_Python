@@ -1,0 +1,6 @@
+class AlreadyRegisteredDeviceExcepiton(Exception):
+    ...
+
+
+class AuthenticationErrorException(Exception):
+    ...
