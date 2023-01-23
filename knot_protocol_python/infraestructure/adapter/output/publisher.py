@@ -61,3 +61,57 @@ class AuthPublisher(Publisher):
     @content.setter
     def content(self, content: str) -> None:
         self.__content = content
+
+
+class UpdateConfigPublisher(Publisher):
+    def __init__(
+            self,
+            channel: BlockingChannel,
+            knot_token: str) -> None:
+        self.__exchange_name = "device"
+        self.__routing_key = "device.config.sent"
+        self.__channel = channel
+        self.__properties = BasicProperties(
+            headers={"Authorization": f"{knot_token}"})
+
+    def publish(self):
+        self.__channel.basic_publish(
+            exchange=self.__exchange_name,
+            routing_key=self.__routing_key,
+            body=self.__content,
+            properties=self.__properties)
+
+    @property
+    def content(self) -> str:
+        return self.__content
+
+    @content.setter
+    def content(self, content: str) -> None:
+        self.__content = content
+
+
+class DataPublisher(Publisher):
+    def __init__(
+            self,
+            channel: BlockingChannel,
+            knot_token: str) -> None:
+        self.__exchange_name = "data.sent"
+        self.__routing_key = ""
+        self.__channel = channel
+        self.__properties = BasicProperties(
+            headers={"Authorization": f"{knot_token}"})
+
+    def publish(self):
+        self.__channel.basic_publish(
+            exchange=self.__exchange_name,
+            routing_key=self.__routing_key,
+            body=self.__content,
+            properties=self.__properties)
+
+    @property
+    def content(self) -> str:
+        return self.__content
+
+    @content.setter
+    def content(self, content: str) -> None:
+        self.__content = content

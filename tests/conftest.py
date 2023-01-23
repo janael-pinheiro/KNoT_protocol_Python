@@ -1,6 +1,8 @@
 from knot_protocol_python.domain.DTO.data_point import DataPointDTO
 from knot_protocol_python.domain.DTO.device_configuration import ConfigurationDTO
 from knot_protocol_python.domain.entities.device_entity import DeviceEntity
+from knot_protocol_python.domain.DTO.event import Event
+from knot_protocol_python.domain.DTO.schema import Schema
 from knot_protocol_python.domain.usecase.states import NewState, WaitRegistrationState, RegisteredState, UnregisteredState
 from tests.mocks.subscriber_mock import ValidSubscriberMock, InvalidSubscriberMock, SubscriberWithExceptionMock
 from tests.mocks.publisher_mock import RegisterPublisherMock
@@ -36,7 +38,9 @@ def register_publisher():
 
 @pytest.fixture(scope="function")
 def device_1(data_point, subscriber_with_valid_token, register_publisher) -> DeviceEntity:
-    configuration = ConfigurationDTO(event=None, schema=None, sensor_id=1)
+    schema = Schema(type_id=65521, unit=0, value_type=3, name="temperature")
+    event = Event(change=True, time_seconds=5, lower_threshold=4, upper_threshold=10)
+    configuration = ConfigurationDTO(event=event, schema=schema, sensor_id=1)
     registered_state = RegisteredState()
     unregistered_state = UnregisteredState()
     wait_registration_state = WaitRegistrationState(

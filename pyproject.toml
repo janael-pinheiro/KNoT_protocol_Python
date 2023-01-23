@@ -9,6 +9,7 @@ packages = [{include = "knot_protocol_python"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 marshmallow = "^3.19.0"
+pyyaml = "^6.0"
 
 
 [tool.poetry.group.dev.dependencies]
