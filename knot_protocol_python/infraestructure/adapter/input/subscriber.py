@@ -21,11 +21,13 @@ class RegisterSubscriber(Subscriber):
         self.__routing_key = "device.registered"
         self.__consumer_tag = "device_register"
         self.__parameters = parameters
-        self.__connection = None
-        self.__channel = None
         self.__exchange = None
         self.__queue = None
         self.__token = None
+        with AMQPConnection(parameters=self.__parameters) as connection:
+            with AMQPChannel(connection=connection) as channel:
+                self.__configure_exchange(channel=channel)
+                self.__configure_queue(channel=channel)
 
     def subscribe(self):
         self.__start()
@@ -35,23 +37,24 @@ class RegisterSubscriber(Subscriber):
         ...
 
     def __start(self):
-        self.__create_connection()
-        self.__channel.basic_consume(
-            queue=self.__queue.name,
-            auto_ack=True,
-            on_message_callback=self.__callback,
-            consumer_tag=self.__consumer_tag)
-        self.__channel.start_consuming()
+        with AMQPConnection(parameters=self.__parameters) as connection:
+            with AMQPChannel(connection=connection) as channel:
+                channel.basic_consume(
+                    queue=self.__queue.name,
+                    auto_ack=True,
+                    on_message_callback=self.__callback,
+                    consumer_tag=self.__consumer_tag)
+                channel.start_consuming()
 
-    def __create_connection(self):
-        self.__connection = AMQPConnection(parameters=self.__parameters).create()
-        self.__channel = AMQPChannel(connection=self.__connection).create()
+    def __configure_exchange(self, channel):
         self.__exchange = AMQPExchange(
             exchange_name=self.__exchange_name,
             exchange_type=self.__exchange_type,
-            channel=self.__channel)
+            channel=channel)
         self.__exchange.declare()
-        self.__queue = AMQPQueue(channel=self.__channel, name="device_registered")
+
+    def __configure_queue(self, channel):
+        self.__queue = AMQPQueue(channel=channel, name="device_registered")
         self.__queue.declare()
         self.__queue.bind(exchange_name=self.__exchange.name, routing_key=self.__routing_key)
 
@@ -73,10 +76,12 @@ class AuthSubscriber(Subscriber):
         self.__routing_key = "device-auth-rpc"
         self.__consumer_tag = "device_auth"
         self.__parameters = parameters
-        self.__connection = None
-        self.__channel = None
         self.__exchange = None
         self.__queue = None
+        with AMQPConnection(parameters=self.__parameters) as connection:
+            with AMQPChannel(connection=connection) as channel:
+                self.__configure_exchange(channel=channel)
+                self.__configure_queue(channel=channel)
 
     def subscribe(self):
         self.__start()
@@ -85,23 +90,24 @@ class AuthSubscriber(Subscriber):
         ...
 
     def __start(self):
-        self.__create_connection()
-        self.__channel.basic_consume(
-            queue=self.__queue.name,
-            auto_ack=True,
-            on_message_callback=self.__callback,
-            consumer_tag=self.__consumer_tag)
-        self.__channel.start_consuming()
+        with AMQPConnection(parameters=self.__parameters) as connection:
+            with AMQPChannel(connection=connection) as channel:
+                channel.basic_consume(
+                    queue=self.__queue.name,
+                    auto_ack=True,
+                    on_message_callback=self.__callback,
+                    consumer_tag=self.__consumer_tag)
+                channel.start_consuming()
 
-    def __create_connection(self):
-        self.__connection = AMQPConnection(parameters=self.__parameters).create()
-        self.__channel = AMQPChannel(connection=self.__connection).create()
+    def __configure_exchange(self, channel):
         self.__exchange = AMQPExchange(
             exchange_name=self.__exchange_name,
             exchange_type=self.__exchange_type,
-            channel=self.__channel)
+            channel=channel)
         self.__exchange.declare()
-        self.__queue = AMQPQueue(channel=self.__channel, name="device_auth")
+
+    def __configure_queue(self, channel):
+        self.__queue = AMQPQueue(channel=channel, name="device_auth")
         self.__queue.declare()
         self.__queue.bind(exchange_name=self.__exchange.name, routing_key=self.__routing_key)
 
@@ -122,11 +128,13 @@ class UpdateConfigSubscriber(Subscriber):
         self.__routing_key = "device.config.updated"
         self.__consumer_tag = "device_config_update"
         self.__parameters = parameters
-        self.__connection = None
-        self.__channel = None
         self.__exchange = None
         self.__queue = None
         self.__config = None
+        with AMQPConnection(parameters=self.__parameters) as connection:
+            with AMQPChannel(connection=connection) as channel:
+                self.__configure_exchange(channel=channel)
+                self.__configure_queue(channel=channel)
 
     def subscribe(self):
         self.__start()
@@ -136,23 +144,24 @@ class UpdateConfigSubscriber(Subscriber):
         ...
 
     def __start(self):
-        self.__create_connection()
-        self.__channel.basic_consume(
-            queue=self.__queue.name,
-            auto_ack=True,
-            on_message_callback=self.__callback,
-            consumer_tag=self.__consumer_tag)
-        self.__channel.start_consuming()
+        with AMQPConnection(parameters=self.__parameters) as connection:
+            with AMQPChannel(connection=connection) as channel:
+                channel.basic_consume(
+                    queue=self.__queue.name,
+                    auto_ack=True,
+                    on_message_callback=self.__callback,
+                    consumer_tag=self.__consumer_tag)
+                channel.start_consuming()
 
-    def __create_connection(self):
-        self.__connection = AMQPConnection(parameters=self.__parameters).create()
-        self.__channel = AMQPChannel(connection=self.__connection).create()
+    def __configure_exchange(self, channel):
         self.__exchange = AMQPExchange(
             exchange_name=self.__exchange_name,
             exchange_type=self.__exchange_type,
-            channel=self.__channel)
+            channel=channel)
         self.__exchange.declare()
-        self.__queue = AMQPQueue(channel=self.__channel, name="device_auth")
+
+    def __configure_queue(self, channel):
+        self.__queue = AMQPQueue(channel=channel, name="device_auth")
         self.__queue.declare()
         self.__queue.bind(exchange_name=self.__exchange.name, routing_key=self.__routing_key)
 

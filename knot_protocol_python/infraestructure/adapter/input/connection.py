@@ -8,20 +8,25 @@ class AMQPConnection:
         self.__parameters = parameters
         self.__connection = None
 
-    def create(self) -> BlockingConnection:
+    def __enter__(self):
         self.__connection = BlockingConnection(self.__parameters)
         return self.__connection
 
-    def destroy(self) -> None:
+    def __exit__(self, exc_type, exc_value, exc_tb):
         self.__connection.close()
 
 
 class AMQPChannel:
     def __init__(self, connection: BlockingConnection) -> None:
         self.__connection = connection
+        self.__channel = None
 
-    def create(self) -> Channel:
-        return self.__connection.channel()
+    def __enter__(self):
+        self.__channel = self.__connection.channel()
+        return self.__channel
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.__channel.close()
 
 
 class AMQPExchange:
