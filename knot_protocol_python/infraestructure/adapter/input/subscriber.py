@@ -8,7 +8,7 @@ from knot_protocol_python.infraestructure.adapter.input.DTO.device_registration_
 from knot_protocol_python.infraestructure.adapter.input.DTO.device_auth_response_DTO import AuthDeviceResponseDTO
 from knot_protocol_python.infraestructure.adapter.input.DTO.device_configuration_response_DTO import ConfigUpdateResponseSchema
 from knot_protocol_python.domain.exceptions.device_exception import (
-    AlreadyRegisteredDeviceExcepiton,
+    AlreadyRegisteredDeviceException,
     AuthenticationErrorException,
     UpdateConfigurationException)
 
@@ -63,7 +63,7 @@ class RegisterSubscriber(Subscriber):
         print(f"Registered response: {dict_body}")
         response = DeviceRegistrationResponseDTO().load(dict_body)
         if response.error == "device already exists":
-            raise AlreadyRegisteredDeviceExcepiton(response.error)
+            raise AlreadyRegisteredDeviceException(response.error)
         self.__token = response.token if response.error is None else None
         channel.basic_cancel(consumer_tag=self.__consumer_tag)
 

@@ -3,7 +3,7 @@ from knot_protocol_python.domain.DTO.device_configuration import ConfigurationDT
 from knot_protocol_python.domain.entities.device_entity import DeviceEntity
 from knot_protocol_python.domain.DTO.event import Event
 from knot_protocol_python.domain.DTO.schema import Schema
-from knot_protocol_python.domain.usecase.states import NewState, WaitRegistrationState, RegisteredState, UnregisteredState
+from knot_protocol_python.domain.usecase.states import DisconnectedState, RegisteredState, UnregisteredState
 from tests.mocks.subscriber_mock import ValidSubscriberMock, InvalidSubscriberMock, SubscriberWithExceptionMock
 from tests.mocks.publisher_mock import RegisterPublisherMock
 from knot_protocol_python.infraestructure.adapter.output.DTO.device_registration_request_DTO import DeviceRegistrationRequestDTO
@@ -13,7 +13,7 @@ import pytest
 
 @pytest.fixture(scope="function")
 def data_point() -> DataPointDTO:
-    return DataPointDTO(sensorID=1, value=42, timestamp="2023-01-21 12:15:00")
+    return DataPointDTO(sensor_id=1, value=42, timestamp="2023-01-21 12:15:00")
 
 
 @pytest.fixture(scope="function")
@@ -42,15 +42,11 @@ def device_1(data_point, subscriber_with_valid_token, register_publisher) -> Dev
     event = Event(change=True, time_seconds=5, lower_threshold=4, upper_threshold=10)
     configuration = ConfigurationDTO(event=event, schema=schema, sensor_id=1)
     registered_state = RegisteredState()
-    unregistered_state = UnregisteredState()
-    wait_registration_state = WaitRegistrationState(
+    new_state = DisconnectedState(
         registered_state=registered_state,
-        unregistered_state=unregistered_state,
-        subscriber=subscriber_with_valid_token)
-    new_state = NewState(
-        wait_registration_state=wait_registration_state,
-        publisher=register_publisher,
-        request_serializer=DeviceRegistrationRequestDTO())
+        register_publisher=register_publisher,
+        register_subscriber=subscriber_with_valid_token,
+        register_serializer=DeviceRegistrationRequestDTO())
     device = DeviceEntity(
         device_id="1",
         name="device_test",
@@ -68,15 +64,11 @@ def device_with_invalid_token(
         register_publisher) -> DeviceEntity:
     configuration = ConfigurationDTO(event=None, schema=None, sensor_id=1)
     registered_state = RegisteredState()
-    unregistered_state = UnregisteredState()
-    wait_registration_state = WaitRegistrationState(
+    new_state = DisconnectedState(
+        register_publisher=register_publisher,
+        register_subscriber=subscriber_with_invalid_token,
         registered_state=registered_state,
-        unregistered_state=unregistered_state,
-        subscriber=subscriber_with_invalid_token)
-    new_state = NewState(
-        wait_registration_state=wait_registration_state,
-        publisher=register_publisher,
-        request_serializer=DeviceRegistrationRequestDTO())
+        register_serializer=DeviceRegistrationRequestDTO())
     device = DeviceEntity(
         device_id="1",
         name="device_test",
@@ -94,15 +86,11 @@ def device_with_subscriber_exception(
         register_publisher) -> DeviceEntity:
     configuration = ConfigurationDTO(event=None, schema=None, sensor_id=1)
     registered_state = RegisteredState()
-    unregistered_state = UnregisteredState()
-    wait_registration_state = WaitRegistrationState(
+    new_state = DisconnectedState(
+        register_publisher=register_publisher,
+        register_subscriber=subscriber_with_exception,
         registered_state=registered_state,
-        unregistered_state=unregistered_state,
-        subscriber=subscriber_with_exception)
-    new_state = NewState(
-        wait_registration_state=wait_registration_state,
-        publisher=register_publisher,
-        request_serializer=DeviceRegistrationRequestDTO())
+        register_serializer=DeviceRegistrationRequestDTO())
     device = DeviceEntity(
         device_id="1",
         name="device_test",
@@ -120,6 +108,6 @@ def device_2(data_point) -> DeviceEntity:
         device_id="2",
         name="device_test",
         config=[configuration],
-        state=NewState(),
+        state=DisconnectedState(),
         data_points=[data_point],
         error="")

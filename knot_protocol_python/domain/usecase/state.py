@@ -6,7 +6,28 @@ class State(ABC):
         self.device = device
 
     @abstractmethod
-    def handle(self) -> None:
+    def register(self) -> None:
+        ...
+
+    def unregister(self) -> None:
+        device = self.get_device()
+        if not device.is_valid_token():
+            return
+        if not device.is_valid_device_id():
+            return
+        # unregister logic
+        self.set_device(device)
+
+    @abstractmethod
+    def authenticate(self) -> None:
+        ...
+
+    @abstractmethod
+    def update_schema(self) -> None:
+        ...
+
+    @abstractmethod
+    def publish_data(self) -> None:
         ...
 
     def get_device(self):

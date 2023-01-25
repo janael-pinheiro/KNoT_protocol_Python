@@ -15,7 +15,7 @@ def test_given_device_entity_serialize(device_1):
                 "name": "temperature",
                 "valueType": 3,
                 "typeId": 65521},
-            "sensorId": "1"}
+            "sensorId": 1}
             ]}
     device_schema = DeviceSchema()
     serialized_device_configuration = device_schema.dump(device_1)

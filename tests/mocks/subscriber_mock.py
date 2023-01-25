@@ -1,5 +1,5 @@
 from knot_protocol_python.domain.boundary.input.subscriber import Subscriber
-from knot_protocol_python.domain.exceptions.device_exception import AlreadyRegisteredDeviceExcepiton
+from knot_protocol_python.domain.exceptions.device_exception import AlreadyRegisteredDeviceException
 
 class ValidSubscriberMock(Subscriber):
     def subscribe(self):
@@ -16,6 +16,6 @@ class InvalidSubscriberMock(Subscriber):
 
 class SubscriberWithExceptionMock(Subscriber):
     def subscribe(self):
-        raise AlreadyRegisteredDeviceExcepiton("Device already exists")
+        raise AlreadyRegisteredDeviceException("Device already exists")
     def unsubscribe(self):
         return False

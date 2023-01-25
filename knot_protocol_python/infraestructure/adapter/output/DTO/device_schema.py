@@ -38,3 +38,4 @@ class DeviceSchema(Schema):
     name = fields.Str()
     state = fields.Str()
     error = fields.Str()
+    token = fields.Str()

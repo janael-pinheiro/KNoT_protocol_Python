@@ -6,7 +6,7 @@ from knot_protocol_python.domain.entities.device_entity import DeviceEntity
 
 def test_given_two_data_points_with_same_values_then_equal(data_point):
     new_data_point = DataPointDTO(
-        sensorID=data_point.sensorID,
+        sensor_id=data_point.sensorID,
         value=data_point.value,
         timestamp=data_point.timestamp)
     assert data_point == new_data_point
@@ -32,3 +32,22 @@ def test_given_valid_device_id_return_true(device_1):
 def test_given_invalid_device_id_return_false(device_1, device_id):
     device_1.device_id = device_id
     assert not device_1.is_valid_device_id()
+
+
+@pytest.mark.parametrize("token", [
+    "c9303bab-53a4-4bff-9f5b-645fca22bcda",
+    "a9303fab-53a4-4bff-9f5b-645fca22bcda",
+    "d9e01bab-53a4-4bff-9f5b-64ffca22bcda"])
+def test_given_valid_token_return_true(device_1, token):
+    device_1.token = token
+    assert device_1.is_valid_token()
+
+
+@pytest.mark.parametrize("token", [
+    "",
+    None,
+    "d9e01bab",
+    "n9e01baf-r3a4-4bff-9f5b-64ffca22bcd"])
+def test_given_invalid_token_return_false(device_1, token):
+    device_1.token = token
+    assert not device_1.is_valid_token()

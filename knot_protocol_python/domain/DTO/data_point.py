@@ -4,6 +4,6 @@ from typing import Union
 
 @dataclass
 class DataPointDTO:
-    sensorID: int
+    sensor_id: int
     value: Union[float, int]
     timestamp: str
