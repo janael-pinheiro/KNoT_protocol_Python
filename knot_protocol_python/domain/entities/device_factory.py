@@ -1,4 +1,4 @@
-from pika import URLParameters
+from pika import URLParameters, BasicProperties
 
 from knot_protocol_python.domain.entities.device_entity import DeviceEntity
 from knot_protocol_python.infraestructure.adapter.input.subscriber import RegisterSubscriber, AuthSubscriber, UpdateConfigSubscriber
@@ -6,7 +6,8 @@ from knot_protocol_python.infraestructure.adapter.output.publisher import (
     RegisterPublisher,
     AuthPublisher,
     UpdateConfigPublisher,
-    DataPublisher)
+    DataPublisher,
+    AMQPPublisher)
 
 from knot_protocol_python.domain.usecase.states import (
     DisconnectedState,
@@ -23,7 +24,7 @@ from knot_protocol_python.domain.DTO.event import Event
 from knot_protocol_python.domain.DTO.schema import Schema
 from knot_protocol_python.domain.DTO.device_configuration import SchemaDTO
 from knot_protocol_python.domain.DTO.data_point import DataPointDTO
-from knot_protocol_python.infraestructure.adapter.output.DTO.device_schema import DataPointsSchema, DeviceSchema
+from knot_protocol_python.infraestructure.adapter.output.DTO.device_schema import DataPointsSchema
 
 
 class DeviceFactory():
@@ -33,21 +34,49 @@ class DeviceFactory():
         register_subscriber = RegisterSubscriber(parameters=parameters)
         auth_subscriber = AuthSubscriber(parameters=parameters)
         update_config_subscriber = UpdateConfigSubscriber(parameters=parameters)
-        register_publisher = RegisterPublisher(channel=channel, knot_token=knot_token)
-        auth_publisher = AuthPublisher(channel=channel, knot_token=knot_token)
-        update_config_publisher = UpdateConfigPublisher(channel=channel, knot_token=knot_token)
-        data_publisher = DataPublisher(channel=channel, knot_token=knot_token)
+        amqp_properties = BasicProperties(headers={"Authorization": f"{knot_token}"})
+        register_publisher = AMQPPublisher(
+            channel=channel,
+            properties=amqp_properties,
+            exchange_name="device",
+            routing_key="device.register",
+            )
+
+        auth_properties = BasicProperties(
+            headers={"Authorization": f"{knot_token}"},
+            reply_to="device-auth-rpc",
+            correlation_id="auth_correlation_id")
+        auth_publisher = AMQPPublisher(
+            channel=channel,
+            exchange_name="device",
+            routing_key="device.auth",
+            properties=auth_properties)
+
+        update_config_publisher = AMQPPublisher(
+            channel=channel,
+            exchange_name="device",
+            routing_key="device.config.sent",
+            properties=amqp_properties
+        )
+
+        data_publisher = AMQPPublisher(
+            channel=channel,
+            exchange_name="data.sent",
+            routing_key="",
+            properties=amqp_properties
+        )
+
         ready_state = ReadyState(
             publisher=data_publisher,
             publisher_serializer=DataPointsSchema())
-        
+
         updated_schema_state = UpdatedSchemaState(ready_state=ready_state)
         authenticated_state = AuthenticatedState(
             publisher=update_config_publisher,
             subscriber=update_config_subscriber,
             request_serializer=UpdateConfigRequestSchema(),
             updated_schema_state=updated_schema_state)
-        
+
         registered_state = RegisteredState(
             publisher=auth_publisher,
             subscriber=auth_subscriber,
