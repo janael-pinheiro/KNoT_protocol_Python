@@ -2,7 +2,7 @@ from marshmallow import Schema, fields
 
 
 class DataPointSchema(Schema):
-    sensorId = fields.Int(attribute="sensorID")
+    sensorId = fields.Int(attribute="sensor_id")
     value = fields.Number()
     timestamp = fields.Str()
 

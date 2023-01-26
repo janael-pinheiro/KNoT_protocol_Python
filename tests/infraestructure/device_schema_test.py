@@ -1,7 +1,7 @@
 from knot_protocol_python.infraestructure.adapter.output.DTO.device_schema import DeviceSchema
 
 
-def test_given_device_entity_serialize(device_1):
+def test_given_device_entity_serialize(test_device):
     EXPECT_DEVICE_CONFIGURATION = {
         "id": "1",
         "config": [{
@@ -18,7 +18,7 @@ def test_given_device_entity_serialize(device_1):
             "sensorId": 1}
             ]}
     device_schema = DeviceSchema()
-    serialized_device_configuration = device_schema.dump(device_1)
+    serialized_device_configuration = device_schema.dump(test_device)
     assert EXPECT_DEVICE_CONFIGURATION["config"][0]["event"]["upperThreshold"] == serialized_device_configuration["config"][0]["event"]["upperThreshold"]
     assert EXPECT_DEVICE_CONFIGURATION["config"][0]["schema"]["name"] == serialized_device_configuration["config"][0]["schema"]["name"]
     assert EXPECT_DEVICE_CONFIGURATION["config"][0]["sensorId"] == serialized_device_configuration["config"][0]["sensorId"]

@@ -1,40 +1,28 @@
-from dataclasses import dataclass
-from typing import List
 import uuid
-from time import sleep
+from dataclasses import dataclass
 from re import search
+from time import sleep
+from typing import List
 
-from knot_protocol_python.domain.DTO.device_configuration import ConfigurationDTO
 from knot_protocol_python.domain.DTO.data_point import DataPointDTO
+from knot_protocol_python.domain.DTO.device_configuration import SchemaDTO
 from knot_protocol_python.domain.usecase.state import State
-from knot_protocol_python.domain.usecase.states import (
-    ReadyState,
-    RegisteredState,
-    AuthenticatedState,
-    UpdatedSchemaState)
+from knot_protocol_python.domain.usecase.states import (AuthenticatedState,
+                                                        ReadyState,
+                                                        RegisteredState,
+                                                        UpdatedSchemaState)
 
 
-@dataclass
+@dataclass(eq=False)
 class DeviceEntity:
-
+    device_id: str
+    name: str
+    config: List[SchemaDTO]
+    state: State
+    data_points: List[DataPointDTO]
+    error: str
+    token: str = ""
     __id_length: int = 16
-
-    def __init__(
-        self,
-        device_id: str,
-        name: str,
-        config: List[ConfigurationDTO],
-        state: State,
-        data_points: List[DataPointDTO],
-        error: str,
-        token: str = "") -> None:
-        self.device_id = device_id
-        self.name = name
-        self.config = config
-        self.error = error
-        self.token = token
-        self.data_points = data_points
-        self.transition_to_state(state)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, DeviceEntity):

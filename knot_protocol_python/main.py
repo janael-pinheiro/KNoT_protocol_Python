@@ -30,7 +30,8 @@ if __name__ == "__main__":
 
             print("Publishing data!")
             while True:
-                data = DataPointDTO(sensor_id=1, value=uniform(1.6, 89.2), timestamp=str(datetime.utcnow()))
+                value = uniform(1.6, 89.2)
+                data = DataPointDTO(sensor_id=1, value=f"{value:.2f}", timestamp=str(datetime.utcnow()))
                 device.data_points = [data]
                 device.publish_data()
                 sleep(5)
