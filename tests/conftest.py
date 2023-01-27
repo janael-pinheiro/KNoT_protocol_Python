@@ -20,7 +20,10 @@ from tests.mocks.subscriber_mock import (InvalidAuthSubscriberMock,
                                          RegisterSubscriberWithExceptionMock,
                                          ValidAuthSubscriberMock,
                                          ValidRegisterSubscriberMock,
-                                         ValidUpdateSchemaSubscriberMock)
+                                         ValidUpdateSchemaSubscriberMock,
+                                         ValidSchemaCallback,
+                                         InvalidSchemaCallback,
+                                         ValidRegisterCallback)
 from knot_protocol_python.domain.DTO.device_configuration import Event, Schema
 
 
@@ -31,7 +34,10 @@ def data_point() -> DataPointDTO:
 
 @pytest.fixture(scope="function")
 def subscriber_with_valid_token():
-    return ValidRegisterSubscriberMock()
+    callback = ValidRegisterCallback()
+    subscriber = ValidRegisterSubscriberMock()
+    subscriber.callback = callback
+    return subscriber
 
 
 @pytest.fixture(scope="function")
@@ -56,12 +62,18 @@ def invalid_auth_subscriber():
 
 @pytest.fixture(scope="function")
 def valid_update_schema_subscriber_mock():
-    return ValidUpdateSchemaSubscriberMock()
+    callback = ValidSchemaCallback()
+    subscriber = ValidUpdateSchemaSubscriberMock()
+    subscriber.callback = callback
+    return subscriber
 
 
 @pytest.fixture(scope="function")
 def invalid_update_schema_subscriber_mock():
-    return InvalidUpdateSchemaSubscriberMock()
+    callback = InvalidSchemaCallback()
+    subscriber = InvalidUpdateSchemaSubscriberMock()
+    subscriber.callback = callback
+    return subscriber
 
 
 @pytest.fixture(scope="function")
