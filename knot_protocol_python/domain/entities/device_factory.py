@@ -1,18 +1,16 @@
 from pika import URLParameters, BasicProperties
 
 from knot_protocol_python.domain.entities.device_entity import DeviceEntity
-from knot_protocol_python.infraestructure.adapter.input.subscriber import RegisterSubscriber, AuthSubscriber, UpdateConfigSubscriber
-from knot_protocol_python.infraestructure.adapter.output.publisher import (
-    RegisterPublisher,
-    AuthPublisher,
-    UpdateConfigPublisher,
-    DataPublisher,
-    AMQPPublisher)
+from knot_protocol_python.infraestructure.adapter.input.subscriber import (
+    AMQPSubscriber,
+    RegisterCallback,
+    UpdateSchemaCallback,
+    AuthCallback)
+from knot_protocol_python.infraestructure.adapter.output.publisher import AMQPPublisher
 
 from knot_protocol_python.domain.usecase.states import (
     DisconnectedState,
     RegisteredState,
-    UnregisteredState,
     AuthenticatedState,
     UpdatedSchemaState,
     ReadyState)
@@ -30,10 +28,28 @@ from knot_protocol_python.infraestructure.adapter.output.DTO.device_schema impor
 class DeviceFactory():
 
     @classmethod
-    def create(cls, parameters: URLParameters, channel, knot_token: str) -> DeviceEntity:
-        register_subscriber = RegisterSubscriber(parameters=parameters)
-        auth_subscriber = AuthSubscriber(parameters=parameters)
-        update_config_subscriber = UpdateConfigSubscriber(parameters=parameters)
+    def create(cls, channel, knot_token: str) -> DeviceEntity:
+        register_callback = RegisterCallback(consumer_tag="device_register", token="")
+        register_subscriber = AMQPSubscriber(
+            channel=channel,
+            consumer_tag="device_register",
+            routing_key="device.registered",
+            queue_name="device_registered")
+        register_subscriber.callback = register_callback
+        auth_callback = AuthCallback(consumer_tag="device_auth")
+        auth_subscriber = AMQPSubscriber(
+            channel=channel,
+            consumer_tag="device_auth",
+            queue_name="device_auth_queue",
+            routing_key="device-auth-rpc")
+        auth_subscriber.callback = auth_callback
+        update_schema_callback = UpdateSchemaCallback(consumer_tag="device_config_update", config=None)
+        update_config_subscriber = AMQPSubscriber(
+            channel=channel,
+            consumer_tag="device_config_update",
+            queue_name="device_schema",
+            routing_key="device.config.updated")
+        update_config_subscriber.callback = update_schema_callback
         amqp_properties = BasicProperties(headers={"Authorization": f"{knot_token}"})
         register_publisher = AMQPPublisher(
             channel=channel,

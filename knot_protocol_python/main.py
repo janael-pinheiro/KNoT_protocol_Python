@@ -17,10 +17,7 @@ if __name__ == "__main__":
     parameters = URLParameters(environ.get("AMQP_URL"))
     with AMQPConnection(parameters=parameters) as connection:
         with AMQPChannel(connection=connection) as channel:
-            device = DeviceFactory.create(
-                parameters=parameters,
-                channel=channel,
-                knot_token=knot_token)
+            device = DeviceFactory.create(channel=channel, knot_token=knot_token)
             print(type(device.state))
             print(device.token)
             device.start()

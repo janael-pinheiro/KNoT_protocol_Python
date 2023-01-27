@@ -40,7 +40,8 @@ class DisconnectedState(State):
             self.register_publisher.content = str(self.register_serializer.dumps(registration_request))
             self.register_publisher.publish()
             try:
-                token = self.register_subscriber.subscribe()
+                self.register_subscriber.subscribe()
+                token = self.register_subscriber.callback.token
                 if token:
                     device.token = token
                     device.transition_to_state(self.registered_state)
@@ -147,7 +148,8 @@ class AuthenticatedState(State):
         self.publisher.content = str(self.request_serializer.dumps(config_request))
         self.publisher.publish()
         try:
-            config = self.subscriber.subscribe()
+            self.subscriber.subscribe()
+            config = self.subscriber.callback.config
             if config:
                 device.config = config
             device.transition_to_state(self.updated_schema_state)
