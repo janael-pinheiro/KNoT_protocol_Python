@@ -1,4 +1,4 @@
-from pika import URLParameters, BasicProperties
+from pika import BasicProperties
 
 from knot_protocol_python.domain.entities.device_entity import DeviceEntity
 from knot_protocol_python.infraestructure.adapter.input.subscriber import (
@@ -23,39 +23,56 @@ from knot_protocol_python.domain.DTO.schema import Schema
 from knot_protocol_python.domain.DTO.device_configuration import SchemaDTO
 from knot_protocol_python.domain.DTO.data_point import DataPointDTO
 from knot_protocol_python.infraestructure.adapter.output.DTO.device_schema import DataPointsSchema
+from knot_protocol_python.infraestructure.adapter.input.connection import AMQPQueue
+from knot_protocol_python.infraestructure.utils.knot_amqp_options import KNoTExchange, KNoTRoutingKey
+from knot_protocol_python.infraestructure.utils.utils import logger_factory
 
 
 class DeviceFactory():
 
     @classmethod
-    def create(cls, channel, knot_token: str) -> DeviceEntity:
+    def create(cls, subscriber_channel, publisher_channel, knot_token: str) -> DeviceEntity:
+        logger = logger_factory()
         register_callback = RegisterCallback(consumer_tag="device_register", token="")
+        register_queue = AMQPQueue(channel=subscriber_channel, name="device_registered")
+        register_queue.declare()
+        register_queue.bind(exchange_name=KNoTExchange.device_exchange.value, routing_key=KNoTRoutingKey.registered_device.value)
         register_subscriber = AMQPSubscriber(
-            channel=channel,
+            channel=subscriber_channel,
             consumer_tag="device_register",
-            routing_key="device.registered",
-            queue_name="device_registered")
-        register_subscriber.callback = register_callback
+            queue_name="device_registered",
+            logger=logger,
+            callback=register_callback)
+
+        auth_queue = AMQPQueue(channel=subscriber_channel, name="device_auth_queue")
+        auth_queue.declare()
+        auth_queue.bind(exchange_name=KNoTExchange.device_exchange.value, routing_key="device-auth-rpc")
         auth_callback = AuthCallback(consumer_tag="device_auth")
         auth_subscriber = AMQPSubscriber(
-            channel=channel,
+            channel=subscriber_channel,
             consumer_tag="device_auth",
             queue_name="device_auth_queue",
-            routing_key="device-auth-rpc")
-        auth_subscriber.callback = auth_callback
+            logger=logger,
+            callback=auth_callback)
+
+        update_schema_queue = AMQPQueue(channel=subscriber_channel, name="device_schema")
+        update_schema_queue.declare()
+        update_schema_queue.bind(exchange_name=KNoTExchange.device_exchange.value, routing_key=KNoTRoutingKey.updated_schema.value)
         update_schema_callback = UpdateSchemaCallback(consumer_tag="device_config_update", config=None)
         update_config_subscriber = AMQPSubscriber(
-            channel=channel,
+            channel=subscriber_channel,
             consumer_tag="device_config_update",
             queue_name="device_schema",
-            routing_key="device.config.updated")
-        update_config_subscriber.callback = update_schema_callback
+            logger=logger,
+            callback=update_schema_callback)
+
         amqp_properties = BasicProperties(headers={"Authorization": f"{knot_token}"})
         register_publisher = AMQPPublisher(
-            channel=channel,
+            channel=publisher_channel,
             properties=amqp_properties,
             exchange_name="device",
             routing_key="device.register",
+            logger=logger
             )
 
         auth_properties = BasicProperties(
@@ -63,23 +80,26 @@ class DeviceFactory():
             reply_to="device-auth-rpc",
             correlation_id="auth_correlation_id")
         auth_publisher = AMQPPublisher(
-            channel=channel,
+            channel=publisher_channel,
             exchange_name="device",
             routing_key="device.auth",
-            properties=auth_properties)
+            properties=auth_properties,
+            logger=logger)
 
         update_config_publisher = AMQPPublisher(
-            channel=channel,
+            channel=publisher_channel,
             exchange_name="device",
             routing_key="device.config.sent",
-            properties=amqp_properties
+            properties=amqp_properties,
+            logger=logger
         )
 
         data_publisher = AMQPPublisher(
-            channel=channel,
-            exchange_name="data.sent",
+            channel=publisher_channel,
+            exchange_name=KNoTExchange.data_sent_exchange.value,
             routing_key="",
-            properties=amqp_properties
+            properties=amqp_properties,
+            logger=logger
         )
 
         ready_state = ReadyState(

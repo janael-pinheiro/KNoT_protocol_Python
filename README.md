@@ -1,5 +1,13 @@
 export AMQP_URL=amqp://knot:knot@localhost:5672
 
+
+# Features
+- KNoT State Machine;
+- Subscriber message confirmation;
+- Publisher message confirmation (need proofs);
+- Automatic disconnection recovery;
+
+
 ## Testing
 poetry run coverage clean
 poetry run coverage run -m pytest -s -v tests

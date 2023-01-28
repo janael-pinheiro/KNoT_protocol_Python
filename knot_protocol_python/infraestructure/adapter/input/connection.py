@@ -1,32 +1,22 @@
 from pika import BlockingConnection
 from pika.connection import Parameters
 from pika.channel import Channel
+from dataclasses import dataclass
 
 
+@dataclass
 class AMQPConnection:
-    def __init__(self, parameters: Parameters) -> None:
-        self.__parameters = parameters
-        self.__connection = None
+    parameters: Parameters
 
-    def __enter__(self):
-        self.__connection = BlockingConnection(self.__parameters)
-        return self.__connection
+    def create(self) -> BlockingConnection:
+        return BlockingConnection(self.parameters)
 
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        self.__connection.close()
-
-
+@dataclass
 class AMQPChannel:
-    def __init__(self, connection: BlockingConnection) -> None:
-        self.__connection = connection
-        self.__channel = None
+    connection: BlockingConnection
 
-    def __enter__(self):
-        self.__channel = self.__connection.channel()
-        return self.__channel
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        self.__channel.close()
+    def create(self) -> Channel:
+        return self.connection.channel()
 
 
 class AMQPExchange:
