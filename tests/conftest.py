@@ -107,7 +107,7 @@ def device_2(data_point, test_empty_disconnected_state) -> DeviceEntity:
         name="device_test",
         config=[configuration],
         state=test_empty_disconnected_state,
-        data_points=[data_point],
+        data=[data_point],
         error="")
 
 
@@ -165,6 +165,6 @@ def test_device(test_schema, test_empty_disconnected_state):
         name="device_test",
         config=[test_schema],
         state=test_empty_disconnected_state,
-        data_points=[data_point],
+        data=[data_point],
         error="")
     return device

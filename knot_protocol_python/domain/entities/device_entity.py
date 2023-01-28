@@ -19,8 +19,8 @@ class DeviceEntity:
     name: str
     config: List[SchemaDTO]
     state: State
-    data_points: List[DataPointDTO]
-    error: str
+    data: List[DataPointDTO] = None
+    error: str = ""
     token: str = ""
     __id_length: int = 16
 
@@ -55,8 +55,12 @@ class DeviceEntity:
         self.state.publish_data()
 
     def start(self) -> None:
+        print("started")
         while not isinstance(self.state, ReadyState):
-            self.register()
+            try:
+                self.register()
+            except Exception as e:
+                print(e)
             if isinstance(self.state, RegisteredState):
                 print("Registered!!")
                 self.authenticate()

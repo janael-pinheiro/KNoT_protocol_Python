@@ -1,4 +1,6 @@
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, post_load
+from knot_protocol_python.domain.DTO.device_configuration import SchemaDTO
+from knot_protocol_python.domain.entities.device_entity import DeviceEntity
 
 
 class DataPointSchema(Schema):
@@ -32,6 +34,14 @@ class SensorConfiguration(Schema):
     event = fields.Nested(SensorEvent)
 
 
+class SchemaConfiguration(Schema):
+    config = fields.List(fields.Nested(SensorConfiguration))
+
+    @post_load
+    def make_schame_configuration(self, data, **kwargs):
+        return [SchemaDTO(**d) for d in data["config"]]
+
+
 class DeviceSchema(Schema):
     id = fields.Str(attribute="device_id")
     config = fields.List(fields.Nested(SensorConfiguration))
@@ -39,3 +49,7 @@ class DeviceSchema(Schema):
     state = fields.Str()
     error = fields.Str()
     token = fields.Str()
+
+    @post_load
+    def make_device(self, data, **kwargs):
+        return DeviceEntity(**data)

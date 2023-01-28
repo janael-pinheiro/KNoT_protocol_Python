@@ -39,14 +39,13 @@ class DisconnectedState(State):
             registration_request = RegistrationRequest(device.device_id, device.name)
             self.register_publisher.content = str(self.register_serializer.dumps(registration_request))
             self.register_publisher.publish()
-            try:
-                self.register_subscriber.subscribe()
-                token = self.register_subscriber.callback.token
-                if token:
-                    device.token = token
-                    device.transition_to_state(self.registered_state)
-            except AlreadyRegisteredDeviceException:
+            self.register_subscriber.subscribe()
+            token = self.register_subscriber.callback.token
+            if token:
+                device.token = token
                 device.transition_to_state(self.registered_state)
+            return
+        device.transition_to_state(self.registered_state)
         self.set_device(device)
 
     def authenticate(self) -> None:
@@ -180,7 +179,8 @@ class UpdatedSchemaState(State):
     def publish_data(self) -> None:
         device = self.get_device()
         device.transition_to_state(self.ready_state)
-        device.publish_data()
+        if device.data:
+            device.publish_data()
         self.set_device(device)
 
     def __repr__(self) -> str:
@@ -203,10 +203,11 @@ class ReadyState(State):
 
     def publish_data(self) -> None:
         device = self.get_device()
-        data = PublishingData(id=device.device_id, data=device.data_points)
-        serialized_data = str(self.publisher_serializer.dumps(data))
-        self.publisher.content = serialized_data
-        self.publisher.publish()
+        if device.data:
+            data = PublishingData(id=device.device_id, data=device.data)
+            serialized_data = str(self.publisher_serializer.dumps(data))
+            self.publisher.content = serialized_data
+            self.publisher.publish()
         self.set_device(device)
 
     def __repr__(self) -> str:
