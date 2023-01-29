@@ -6,6 +6,7 @@ export AMQP_URL=amqp://knot:knot@localhost:5672
 - Subscriber message confirmation;
 - Publisher message confirmation (need proofs);
 - Automatic disconnection recovery;
+- Configuration validation.
 
 
 ## Testing

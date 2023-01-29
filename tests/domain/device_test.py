@@ -1,7 +1,7 @@
 import pytest 
 
-from knot_protocol_python.domain.DTO.data_point import DataPointDTO
-from knot_protocol_python.domain.entities.device_entity import DeviceEntity
+from knot_protocol.domain.DTO.data_point import DataPointDTO
+from knot_protocol.domain.entities.device_entity import DeviceEntity
 
 
 def test_given_two_data_points_with_same_values_then_equal(data_point):

@@ -1,17 +1,19 @@
 import pytest
 
-from knot_protocol_python.domain.DTO.data_point import DataPointDTO
-from knot_protocol_python.domain.DTO.device_configuration import SchemaDTO
-from knot_protocol_python.domain.entities.device_entity import DeviceEntity
-from knot_protocol_python.domain.usecase.states import (AuthenticatedState,
+from knot_protocol.domain.DTO.data_point import DataPointDTO
+from knot_protocol.domain.DTO.schema import SchemaDTO
+from knot_protocol.domain.DTO.event import Event
+from knot_protocol.domain.DTO.device_configuration import ConfigurationDTO
+from knot_protocol.domain.entities.device_entity import DeviceEntity
+from knot_protocol.domain.usecase.states import (AuthenticatedState,
                                                         DisconnectedState,
                                                         RegisteredState,
                                                         UpdatedSchemaState)
-from knot_protocol_python.infraestructure.adapter.output.DTO.device_auth_request_DTO import \
+from knot_protocol.infraestructure.adapter.output.DTO.device_auth_request_DTO import \
     DeviceAuthRequestDTO
-from knot_protocol_python.infraestructure.adapter.output.DTO.device_registration_request_DTO import \
+from knot_protocol.infraestructure.adapter.output.DTO.device_registration_request_DTO import \
     DeviceRegistrationRequestDTO
-from knot_protocol_python.infraestructure.adapter.output.DTO.device_schema import \
+from knot_protocol.infraestructure.adapter.output.DTO.device_schema import \
     DeviceSchema
 from tests.mocks.publisher_mock import PublisherMock
 from tests.mocks.subscriber_mock import (InvalidAuthSubscriberMock,
@@ -24,7 +26,6 @@ from tests.mocks.subscriber_mock import (InvalidAuthSubscriberMock,
                                          ValidSchemaCallback,
                                          InvalidSchemaCallback,
                                          ValidRegisterCallback)
-from knot_protocol_python.domain.DTO.device_configuration import Event, Schema
 
 
 @pytest.fixture(scope="function")
@@ -100,7 +101,7 @@ def test_disconnected_state(publisher_mock):
 
 
 @pytest.fixture(scope="function")
-def device_2(data_point, test_empty_disconnected_state) -> DeviceEntity:
+def another_device(data_point, test_empty_disconnected_state) -> DeviceEntity:
     configuration = SchemaDTO(event=None, schema=None, sensor_id=1)
     return DeviceEntity(
         device_id="2",
@@ -137,9 +138,9 @@ def test_authenticated_state(publisher_mock):
 
 @pytest.fixture(scope="function")
 def test_schema():
-    schema = SchemaDTO(
+    schema = ConfigurationDTO(
         event=Event(change=True, time_seconds=5, lower_threshold=1, upper_threshold=10),
-        schema=Schema(name="temperature", value_type=3, type_id=65521, unit=0),
+        schema=SchemaDTO(name="temperature", value_type=3, type_id=65521, unit=0),
         sensor_id=1)
     return schema
 
@@ -168,3 +169,53 @@ def test_device(test_schema, test_empty_disconnected_state):
         data=[data_point],
         error="")
     return device
+
+@pytest.fixture(scope="function")
+def valid_device_schema():
+    device_schema = {
+        "id": "1964a231a4d14173",
+        "name": "d8ea733a-a788-41ec-9be5-3426b252b66f",
+        "error": "",
+        "state": "disconnected",
+        "config": [{
+            "event": {
+                "lowerThreshold": 4.0,
+                "upperThreshold": 10.0,
+                "change": True,
+                "timeSec": 5},
+            "schema": {
+                "unit": 0,
+                "name": "temperature",
+                "valueType": 3,
+                "typeId": 65521},
+            "sensorId": 1}
+            ]}
+    return device_schema
+
+
+@pytest.fixture(scope="function")
+def valid_event_configuration():
+    return {
+        "change": True,
+        "lowerThreshold": 47.0,
+        "timeSec": 1,
+        "upperThreshold": 154.0}
+
+
+@pytest.fixture(scope="function")
+def valid_data_point_configuration():
+    return {
+        "sensorId": 1,
+        "value": 0,
+        "timestamp": ""
+    }
+
+
+@pytest.fixture(scope="function")
+def valid_sensor_schema():
+    return {
+        "typeId": 65521,
+        "unit": 0,
+        "valueType": 1,
+        "name": "temperature"
+    }

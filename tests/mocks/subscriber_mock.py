@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import Any
 
-from knot_protocol_python.infraestructure.adapter.input.subscriber import AMQPCallback
-from knot_protocol_python.domain.boundary.input.subscriber import Subscriber
-from knot_protocol_python.domain.exceptions.device_exception import (
+from knot_protocol.infraestructure.adapter.input.subscriber import AMQPCallback
+from knot_protocol.domain.boundary.input.subscriber import Subscriber
+from knot_protocol.domain.exceptions.device_exception import (
     AlreadyRegisteredDeviceException,
     AuthenticationErrorException,
     UpdateConfigurationException)

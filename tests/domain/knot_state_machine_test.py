@@ -1,8 +1,8 @@
 from unittest.mock import patch
 import pytest
 
-from knot_protocol_python.domain.usecase.states import DisconnectedState, RegisteredState, AuthenticatedState, UpdatedSchemaState
-from knot_protocol_python.domain.exceptions.device_exception import NotAuthenticatedException
+from knot_protocol.domain.usecase.states import DisconnectedState, RegisteredState, AuthenticatedState, UpdatedSchemaState
+from knot_protocol.domain.exceptions.device_exception import NotAuthenticatedException
 
 
 def test_device_register_is_called(subscriber_with_valid_token,
