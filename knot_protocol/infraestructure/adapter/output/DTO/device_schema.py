@@ -88,7 +88,7 @@ class SchemaConfiguration(Schema):
 class DeviceSchema(Schema):
     id = fields.Str(
         attribute="device_id",
-        validate=[Length(equal=16), Regexp(regex="[1-9a-f]{16}")],
+        validate=[Length(equal=16), Regexp(regex="[0-9a-f]{16}")],
         required=True)
     config = fields.List(fields.Nested(SensorConfiguration), required=True)
     name = fields.Str(required=True)

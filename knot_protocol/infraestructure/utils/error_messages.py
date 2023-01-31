@@ -2,4 +2,4 @@ from enum import Enum
 
 
 class KNoTErrorMessage(Enum):
-    device_exists = "device already exists"
+    device_exists = "thing is already registered"

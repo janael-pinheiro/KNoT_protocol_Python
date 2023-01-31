@@ -2,6 +2,10 @@ class AlreadyRegisteredDeviceException(Exception):
     ...
 
 
+class AlreadyUnregisteredDeviceException(Exception):
+    ...
+
+
 class AlreadyAuthenticatedException(Exception):
     ...
 
@@ -18,7 +22,7 @@ class NotReadyException(Exception):
     ...
 
 
-class NotRegistered(Exception):
+class NotRegisteredException(Exception):
     ...
 
 
@@ -35,6 +39,10 @@ class AuthenticationErrorException(Exception):
 
 
 class UpdateConfigurationException(Exception):
+    ...
+
+
+class UnregisteredException(Exception):
     ...
 
 

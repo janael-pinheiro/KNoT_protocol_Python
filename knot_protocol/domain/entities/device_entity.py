@@ -2,7 +2,7 @@ import uuid
 from dataclasses import dataclass
 from re import search
 from time import sleep
-from typing import List
+from typing import List, Any
 
 from knot_protocol.domain.DTO.data_point import DataPointDTO
 from knot_protocol.domain.DTO.schema import SchemaDTO
@@ -20,6 +20,7 @@ class DeviceEntity:
     name: str
     config: List[SchemaDTO]
     state: State
+    amqp_generator: Any = None
     data: List[DataPointDTO] = None
     error: str = ""
     token: str = ""
@@ -35,6 +36,12 @@ class DeviceEntity:
 
     def __repr__(self) -> str:
         return f"Device {self.name} has ID {self.device_id}"
+
+    def __enter__(self) -> None:
+        self.start()
+
+    def __exit__(self, exception_type, exception_value, exception_traceback) -> None:
+        self.stop()
 
     def transition_to_state(self, state: State):
         self.state = state
@@ -72,6 +79,12 @@ class DeviceEntity:
                 print("Updated schema!")
                 self.publish_data()
             sleep(1)
+
+    def stop(self) -> None:
+        try:
+            next(self.amqp_generator)
+        except StopIteration:
+            print("Stopping device.")
 
     def is_valid_device_id(self) -> bool:
         if len(self.device_id) != 16:

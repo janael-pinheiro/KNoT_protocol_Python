@@ -9,14 +9,9 @@ class State(ABC):
     def register(self) -> None:
         ...
 
+    @abstractmethod
     def unregister(self) -> None:
-        device = self.get_device()
-        if not device.is_valid_token():
-            return
-        if not device.is_valid_device_id():
-            return
-        # unregister logic
-        self.set_device(device)
+        ...
 
     @abstractmethod
     def authenticate(self) -> None:
