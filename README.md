@@ -54,4 +54,5 @@ with device:
 ## Docker
 ```sh
 $ sudo docker build --file docker/Dockerfile . --no-cache --tag knot_protocol
+$ sudo docker run knot_protocol
 ```
