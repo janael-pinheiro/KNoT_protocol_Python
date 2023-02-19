@@ -48,3 +48,11 @@ class UnregisteredException(Exception):
 
 class DifferentDeviceIdentifierException(Exception):
     ...
+
+
+class DeviceNotFoundException(Exception):
+    ...
+
+
+class UnauthorizedException(Exception):
+    ...

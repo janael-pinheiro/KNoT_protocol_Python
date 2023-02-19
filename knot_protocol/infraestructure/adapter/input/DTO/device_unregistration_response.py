@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields, post_load
 
-from knot_protocol.domain.boundary.input.DTO.Unregistration_response_dto import \
+from knot_protocol.domain.boundary.input.DTO.unregistration_response_dto import \
     UnregistrationReponseDTO
 
 

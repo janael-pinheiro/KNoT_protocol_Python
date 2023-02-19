@@ -5,20 +5,23 @@ from time import sleep
 from typing import List, Any
 
 from knot_protocol.domain.DTO.data_point import DataPointDTO
-from knot_protocol.domain.DTO.schema import SchemaDTO
+from knot_protocol.domain.DTO.device_configuration import ConfigurationDTO
 from knot_protocol.domain.usecase.state import State
 from knot_protocol.domain.usecase.states import (AuthenticatedState,
                                                         ReadyState,
                                                         RegisteredState,
                                                         UpdatedSchemaState)
 from knot_protocol.infraestructure.utils.knot_amqp_options import KNoTPatterns
+from knot_protocol.infraestructure.utils.logger import logger_factory
+
+logger = logger_factory()
 
 
 @dataclass(eq=False)
 class DeviceEntity:
     device_id: str
     name: str
-    config: List[SchemaDTO]
+    config: List[ConfigurationDTO]
     state: State
     amqp_generator: Any = None
     data: List[DataPointDTO] = None
@@ -68,15 +71,15 @@ class DeviceEntity:
             try:
                 self.register()
             except Exception as e:
-                print(e)
+                logger.error(str(e))
             if isinstance(self.state, RegisteredState):
-                print("Registered!!")
+                logger.info("Registered!")
                 self.authenticate()
             if isinstance(self.state, AuthenticatedState):
-                print("Authenticated!")
+                logger.info("Authenticated!")
                 self.update_schema()
             if isinstance(self.state, UpdatedSchemaState):
-                print("Updated schema!")
+                logger.info("Updated schema!")
                 self.publish_data()
             sleep(1)
 

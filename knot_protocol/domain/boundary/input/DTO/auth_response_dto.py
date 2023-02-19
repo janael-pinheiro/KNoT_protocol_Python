@@ -1,4 +1,7 @@
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
 class AuthResponseDTO:
-    def __init__(self, id: str, error: str = None) -> None:
-        self.id = id
-        self.error = error
+    id: str
+    error: str = ""

@@ -91,9 +91,9 @@ class DeviceSchema(Schema):
         validate=[Length(equal=16), Regexp(regex="[0-9a-f]{16}")],
         required=True)
     config = fields.List(fields.Nested(SensorConfiguration), required=True)
-    name = fields.Str(required=True)
+    name = fields.Str(required=True, validate=[Length(min=8, max=255)])
     state = fields.Str()
-    error = fields.Str()
+    error = fields.Str(allow_none=True)
     token = fields.Str(
         validate=[Length(equal=36), Regexp(regex=KNoTPatterns.TOKEN.value)],
         required=True)

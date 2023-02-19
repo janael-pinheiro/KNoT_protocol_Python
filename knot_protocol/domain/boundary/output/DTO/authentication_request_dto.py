@@ -1,4 +1,7 @@
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
 class AuthenticationRequestDTO:
-    def __init__(self, id: str, token: str) -> None:
-        self.id = id
-        self.token = token
+    id: str
+    token: str

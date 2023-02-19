@@ -1,4 +1,7 @@
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
 class RegistrationRequest:
-    def __init__(self, id: str, name: str) -> None:
-        self.id = id
-        self.name = name
+    id: str
+    name: str

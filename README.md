@@ -6,8 +6,13 @@ export AMQP_URL=amqp://knot:knot@localhost:5672
 - Subscriber message confirmation;
 - Publisher message confirmation (need proofs);
 - Automatic disconnection recovery;
-- Configuration validation.
+- Configuration validation;
+- Consumer timeout.
 
+# Environment variables
+- KNOT_TOKEN;
+- CONSUMER_TIMEOUT;
+- AMQP_URL.
 
 ## Testing
 poetry run coverage clean
@@ -51,6 +56,19 @@ with device:
     device.publish_data()
 ```
 
+
+Create new device:
+```
+temperature_schema = SchemaFactory.create(name="temperature", value_type=KNoTValueType.FLOAT.value, unit=0, type_id=65521)
+temperature_event = EventFactory.create(change=True, time_seconds=5, lower_threshold=1.6, upper_threshold=89.2)
+temperatura_configuration = ConfigurationFactory.create(sensor_id=1, schema=temperature_schema, event=temperature_event)
+
+humidty_schema = SchemaFactory.create(name="humidity", value_type=KNoTValueType.FLOAT.value, unit=0, type_id=65521)
+humidity_event = EventFactory.create(change=True, time_seconds=5, lower_threshold=1.6, upper_threshold=89.2)
+humidity_configuration = ConfigurationFactory.create(sensor_id=2, schema=humidty_schema, event=humidity_event)
+
+device = DeviceFactory.create(name="Device 2", schema=[temperatura_configuration, humidity_configuration])
+```
 ## Docker
 ```sh
 $ sudo docker build --file docker/Dockerfile . --no-cache --tag knot_protocol

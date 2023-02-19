@@ -14,10 +14,14 @@ from knot_protocol.domain.boundary.output.DTO.update_config_request import \
     UpdateConfigRequest
 from knot_protocol.domain.boundary.output.publisher import Publisher
 from knot_protocol.domain.exceptions.device_exception import (
-    AlreadyAuthenticatedException, AlreadyReady,
-    AlreadyRegisteredDeviceException, AlreadyUpdatedSchema,
-    AuthenticationErrorException, NotAuthenticatedException, NotReadyException,
-    NotRegisteredException, UpdateConfigurationException, AlreadyUnregisteredDeviceException, UnregisteredException)
+    AlreadyAuthenticatedException,
+    AlreadyReady,
+    AlreadyRegisteredDeviceException,
+    AlreadyUpdatedSchema,
+    NotAuthenticatedException,
+    NotReadyException,
+    NotRegisteredException,
+    AlreadyUnregisteredDeviceException)
 from knot_protocol.domain.usecase.state import State
 
 
@@ -33,22 +37,18 @@ class CommonStateOperation:
     register_serializer: Schema
     register_state: State
 
-
     def unregister(self):
         unregistration_request = UnregistrationRequest(
             id=self.device.device_id,
             name=self.device.name)
         self.unregister_publisher.content =\
             str(self.unregister_serializer.dumps(unregistration_request))
-        self.unregister_publisher.publish()
-        try:
+        with self.unregister_subscriber:
+            self.unregister_publisher.publish()
             self.unregister_subscriber.callback.device_id = self.device.device_id
             self.unregister_subscriber.subscribe()
-        except UnregisteredException:
-            ...
-        else:
-            self.device.token = None
-            self.device.transition_to_state(self.unregister_state)
+        self.device.token = None
+        self.device.transition_to_state(self.unregister_state)
     
     def register(self):
         if not self.device.is_valid_device_id():
@@ -56,10 +56,11 @@ class CommonStateOperation:
         if not self.device.is_valid_token():
             registration_request = RegistrationRequest(self.device.device_id, self.device.name)
             self.register_publisher.content = str(self.register_serializer.dumps(registration_request))
-            self.register_publisher.publish()
-            self.register_subscriber.callback.device_id = self.device.device_id
-            self.register_subscriber.subscribe()
-            token = self.register_subscriber.callback.token
+            with self.register_subscriber:
+                self.register_publisher.publish()
+                self.register_subscriber.callback.device_id = self.device.device_id
+                self.register_subscriber.subscribe()
+                token = self.register_subscriber.callback.token
             if token:
                 self.device.token = token
                 self.device.transition_to_state(self.register_state)
@@ -93,13 +94,11 @@ class DisconnectedState(State):
             return
         authentication_request = AuthenticationRequestDTO(device.device_id, device.token)
         self.authenticate_publisher.content = str(self.authenticate_serializer.dumps(authentication_request))
-        self.authenticate_publisher.publish()
-        try:
+        with self.authenticate_subscriber:
+            self.authenticate_publisher.publish()
             self.authenticate_subscriber.callback.device_id = device.device_id
             self.authenticate_subscriber.subscribe()
-            device.transition_to_state(self.authenticated_state)
-        except AuthenticationErrorException:
-            ...
+        device.transition_to_state(self.authenticated)
         self.set_device(device)
 
     def update_schema(self) -> None:
@@ -131,13 +130,11 @@ class RegisteredState(State):
         device = self.get_device()
         authentication_request = AuthenticationRequestDTO(device.device_id, device.token)
         self.publisher.content = str(self.request_serializer.dumps(authentication_request))
-        self.publisher.publish()
-        try:
+        with self.subscriber:
+            self.publisher.publish()
             self.subscriber.callback.device_id = device.device_id
             self.subscriber.subscribe()
-            device.transition_to_state(self.authenticated)
-        except AuthenticationErrorException:
-            ...
+        device.transition_to_state(self.authenticated)
         self.set_device(device)
 
     def update_schema(self) -> None:
@@ -196,16 +193,14 @@ class AuthenticatedState(State):
         device = self.get_device()
         config_request = UpdateConfigRequest(id=device.device_id, config=device.config)
         self.publisher.content = str(self.request_serializer.dumps(config_request))
-        self.publisher.publish()
-        try:
+        with self.subscriber:
+            self.publisher.publish()
             self.subscriber.callback.device_id = device.device_id
             self.subscriber.subscribe()
             config = self.subscriber.callback.config
-            if config:
-                device.config = config
-            device.transition_to_state(self.updated_schema_state)
-        except UpdateConfigurationException:
-            ...
+        if config:
+            device.config = config
+        device.transition_to_state(self.updated_schema_state)
         self.set_device(device)
 
     def publish_data(self) -> None:
