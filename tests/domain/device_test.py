@@ -1,6 +1,6 @@
 import pytest 
 
-from knot_protocol.domain.DTO.data_point import DataPointDTO
+from knot_protocol.domain.boundary.output.DTO.data_point import DataPointDTO
 from knot_protocol.domain.entities.device_entity import DeviceEntity
 
 
@@ -12,8 +12,8 @@ def test_given_two_data_points_with_same_values_then_equal(data_point):
     assert data_point == new_data_point
 
 
-def test_given_two_with_different_ids_return_true(test_device, device_2):
-    assert test_device != device_2
+def test_given_two_with_different_ids_return_true(test_device, another_device):
+    assert test_device != another_device
 
 
 def test_device_id_must_sixteen_length():

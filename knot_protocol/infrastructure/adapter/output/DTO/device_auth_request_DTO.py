@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields
 
 
-class DeviceAuthRequestDTO(Schema):
+class DeviceAuthRequestSchema(Schema):
     id = fields.Str()
     token = fields.Str()

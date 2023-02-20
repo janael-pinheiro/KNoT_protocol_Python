@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields
 
-from knot_protocol.infraestructure.adapter.output.DTO.device_schema import SensorConfiguration
+from knot_protocol.infrastructure.adapter.output.DTO.device_schema import SensorConfiguration
 
 
 class UpdateConfigRequestSchema(Schema):

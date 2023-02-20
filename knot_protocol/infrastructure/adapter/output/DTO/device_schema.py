@@ -1,11 +1,11 @@
 from marshmallow import Schema, ValidationError, fields, post_load
 from marshmallow.validate import And, Length, OneOf, Regexp
 
-from knot_protocol.domain.DTO.data_point import DataPointDTO
-from knot_protocol.domain.DTO.event import Event
-from knot_protocol.domain.DTO.schema import SchemaDTO
+from knot_protocol.domain.boundary.output.DTO.data_point import DataPointDTO
+from knot_protocol.domain.boundary.output.DTO.event import Event
+from knot_protocol.domain.boundary.output.DTO.schema import SchemaDTO
 from knot_protocol.domain.entities.device_entity import DeviceEntity
-from knot_protocol.infraestructure.utils.knot_amqp_options import KNoTValueType, KNoTPatterns
+from knot_protocol.infrastructure.utils.knot_amqp_options import KNoTValueType, KNoTPatterns
 
 
 def is_integer(value):

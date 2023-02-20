@@ -11,7 +11,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.wait import wait_exponential
 
 from knot_protocol.domain.boundary.input.subscriber import Subscriber
-from knot_protocol.domain.DTO.schema import SchemaDTO
+from knot_protocol.domain.boundary.output.DTO.schema import SchemaDTO
 from knot_protocol.domain.exceptions.device_exception import (
     AlreadyRegisteredDeviceException,
     AuthenticationErrorException,
@@ -20,19 +20,19 @@ from knot_protocol.domain.exceptions.device_exception import (
     UnregisteredException,
     DeviceNotFoundException,
     UnauthorizedException)
-from knot_protocol.infraestructure.adapter.input.connection import (
+from knot_protocol.infrastructure.adapter.input.amqp_connection import (
     AMQPChannel, AMQPConnection, AMQPQueue)
-from knot_protocol.infraestructure.adapter.input.DTO.device_auth_response_DTO import \
+from knot_protocol.infrastructure.adapter.input.DTO.device_auth_response_DTO import \
     AuthDeviceResponseDTO
-from knot_protocol.infraestructure.adapter.input.DTO.device_configuration_response_DTO import \
+from knot_protocol.infrastructure.adapter.input.DTO.device_configuration_response_DTO import \
     ConfigUpdateResponseSchema
-from knot_protocol.infraestructure.adapter.input.DTO.device_registration_response_DTO import \
+from knot_protocol.infrastructure.adapter.input.DTO.device_registration_response_DTO import \
     DeviceRegistrationResponseDTO
-from knot_protocol.infraestructure.adapter.input.DTO.device_unregistration_response import DeviceUnregistrationResponseDTO
-from knot_protocol.infraestructure.utils.error_messages import KNoTErrorMessage
-from knot_protocol.infraestructure.utils.knot_amqp_options import KNoTExchange
-from knot_protocol.infraestructure.utils.utils import json_parser
-from knot_protocol.infraestructure.utils.logger import logger_factory
+from knot_protocol.infrastructure.adapter.input.DTO.device_unregistration_response import DeviceUnregistrationResponseDTO
+from knot_protocol.infrastructure.utils.error_messages import KNoTErrorMessage
+from knot_protocol.infrastructure.utils.knot_amqp_options import KNoTExchange
+from knot_protocol.infrastructure.utils.utils import json_parser
+from knot_protocol.infrastructure.utils.logger import logger_factory
 
 logger = logger_factory()
 

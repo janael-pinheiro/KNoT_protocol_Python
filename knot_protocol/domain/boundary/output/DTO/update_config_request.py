@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
-from knot_protocol.domain.DTO.schema import SchemaDTO
+from knot_protocol.domain.boundary.output.DTO.schema import SchemaDTO
 
 
 @dataclass(frozen=True)

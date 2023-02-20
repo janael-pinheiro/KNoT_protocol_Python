@@ -2,7 +2,10 @@ from unittest.mock import patch
 import pytest
 
 from knot_protocol.domain.usecase.states import DisconnectedState, RegisteredState, AuthenticatedState, UpdatedSchemaState
-from knot_protocol.domain.exceptions.device_exception import NotAuthenticatedException
+from knot_protocol.domain.exceptions.device_exception import (
+    NotAuthenticatedException,
+    UpdateConfigurationException,
+    AuthenticationErrorException)
 
 
 def test_device_register_is_called(subscriber_with_valid_token,
@@ -24,7 +27,7 @@ def test_given_valid_token_transition_to_registered_state(
     assert isinstance(test_device.state, DisconnectedState)
     test_device.register()
     assert isinstance(test_device.state, RegisteredState)
-    assert test_device.token != ""
+    assert test_device.token != "5b67ce6b-ef21-7013-3115-2d6297e1bd2b"
 
 
 def test_given_invalid_token_remains_diconnected_state(
@@ -80,7 +83,8 @@ def test_given_invalid_auth_subscriber_when_device_registered_then_remains_regis
     test_registered_state.subscriber = invalid_auth_subscriber
     test_device.transition_to_state(test_registered_state)
     assert isinstance(test_device.state, RegisteredState)
-    test_device.authenticate()
+    with pytest.raises(AuthenticationErrorException):
+        test_device.authenticate()
     assert isinstance(test_device.state, RegisteredState)
 
 
@@ -103,6 +107,6 @@ def test_given_invalid_schema_subscriber_when_device_authenticated_then_transiti
     test_authenticated_state.subscriber = invalid_update_schema_subscriber_mock
     test_device.transition_to_state(test_authenticated_state)
     assert isinstance(test_device.state, AuthenticatedState)
-    test_device.update_schema()
+    with pytest.raises(UpdateConfigurationException):
+        test_device.update_schema()
     assert isinstance(test_device.state, AuthenticatedState)
-

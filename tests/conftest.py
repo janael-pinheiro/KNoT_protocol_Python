@@ -1,19 +1,18 @@
 import pytest
 
-from knot_protocol.domain.DTO.data_point import DataPointDTO
-from knot_protocol.domain.DTO.schema import SchemaDTO
-from knot_protocol.domain.DTO.event import Event
-from knot_protocol.domain.DTO.device_configuration import ConfigurationDTO
+from knot_protocol.domain.boundary.output.DTO.data_point import DataPointDTO
+from knot_protocol.domain.boundary.output.DTO.schema import SchemaDTO
+from knot_protocol.domain.boundary.output.DTO.event import Event
+from knot_protocol.domain.boundary.output.DTO.device_configuration import ConfigurationDTO
 from knot_protocol.domain.entities.device_entity import DeviceEntity
-from knot_protocol.domain.usecase.states import (AuthenticatedState,
-                                                        DisconnectedState,
-                                                        RegisteredState,
-                                                        UpdatedSchemaState)
-from knot_protocol.infraestructure.adapter.output.DTO.device_auth_request_DTO import \
-    DeviceAuthRequestDTO
-from knot_protocol.infraestructure.adapter.output.DTO.device_registration_request_DTO import \
-    DeviceRegistrationRequestDTO
-from knot_protocol.infraestructure.adapter.output.DTO.device_schema import \
+from knot_protocol.domain.usecase.states import (
+    AuthenticatedState,
+    DisconnectedState,
+    RegisteredState,
+    UpdatedSchemaState)
+from knot_protocol.infrastructure.adapter.output.DTO.device_auth_request_DTO import \
+    DeviceAuthRequestSchema
+from knot_protocol.infrastructure.adapter.output.DTO.device_schema import \
     DeviceSchema
 from tests.mocks.publisher_mock import PublisherMock
 from tests.mocks.subscriber_mock import (InvalidAuthSubscriberMock,
@@ -25,7 +24,9 @@ from tests.mocks.subscriber_mock import (InvalidAuthSubscriberMock,
                                          ValidUpdateSchemaSubscriberMock,
                                          ValidSchemaCallback,
                                          InvalidSchemaCallback,
-                                         ValidRegisterCallback)
+                                         ValidRegisterCallback,
+                                         ValidAuthCallback)
+from tests.mocks.common_operation_mock import CommonOperationMock
 
 
 @pytest.fixture(scope="function")
@@ -53,12 +54,23 @@ def subscriber_with_exception():
 
 @pytest.fixture(scope="function")
 def valid_auth_subscriber():
-    return ValidAuthSubscriberMock()
+    callback = ValidAuthCallback()
+    valid_auth_subscriber_mock = ValidAuthSubscriberMock()
+    valid_auth_subscriber_mock.callback = callback
+    return valid_auth_subscriber_mock
 
 
 @pytest.fixture(scope="function")
 def invalid_auth_subscriber():
-    return InvalidAuthSubscriberMock()
+    callback = ValidAuthCallback()
+    invalid_subscriber = InvalidAuthSubscriberMock()
+    invalid_subscriber.callback = callback
+    return invalid_subscriber
+
+
+@pytest.fixture(scope="function")
+def common_operation_mock():
+    return CommonOperationMock(register_state=None, device=None)
 
 
 @pytest.fixture(scope="function")
@@ -83,56 +95,57 @@ def publisher_mock():
 
 
 @pytest.fixture(scope="function")
-def test_disconnected_state(publisher_mock):
+def test_disconnected_state(publisher_mock, common_operation_mock):
     new_state = DisconnectedState(
-        register_publisher=publisher_mock,
-        register_subscriber=publisher_mock,
         registered_state=RegisteredState(
             authenticated=None,
             publisher=None,
             request_serializer=None,
-            subscriber=None),
-        register_serializer=DeviceRegistrationRequestDTO(),
+            subscriber=None,
+            common_operation=common_operation_mock),
         authenticate_publisher=None,
         authenticate_serializer=None,
         authenticate_subscriber=None,
-        authenticated=None)
+        authenticated=None,
+        common_operation=common_operation_mock)
     return new_state
 
 
 @pytest.fixture(scope="function")
-def another_device(data_point, test_empty_disconnected_state) -> DeviceEntity:
-    configuration = SchemaDTO(event=None, schema=None, sensor_id=1)
+def another_device(data_point, test_empty_disconnected_state, test_schema) -> DeviceEntity:
     return DeviceEntity(
         device_id="2",
         name="device_test",
-        config=[configuration],
+        config=[test_schema],
         state=test_empty_disconnected_state,
         data=[data_point],
         error="")
 
 
 @pytest.fixture(scope="function")
-def test_registered_state(publisher_mock):
+def test_registered_state(publisher_mock, common_operation_mock, valid_auth_subscriber):
     registered_state = RegisteredState(
         authenticated=AuthenticatedState(
             publisher=None,
             request_serializer=None,
             subscriber=None,
-            updated_schema_state=None),
+            updated_schema_state=None,
+            common_operation=common_operation_mock),
         publisher=publisher_mock,
-        request_serializer=DeviceAuthRequestDTO(),
-        subscriber=None)
+        request_serializer=DeviceAuthRequestSchema(),
+        subscriber=valid_auth_subscriber,
+        common_operation=common_operation_mock)
     return registered_state
 
 
 @pytest.fixture(scope="function")
-def test_authenticated_state(publisher_mock):
+def test_authenticated_state(publisher_mock, common_operation_mock):
     authenticated = AuthenticatedState(
         publisher=publisher_mock,
         subscriber=subscriber_with_valid_token,
         request_serializer=DeviceSchema(),
-        updated_schema_state=UpdatedSchemaState(ready_state=None))
+        updated_schema_state=UpdatedSchemaState(ready_state=None, common_operation=common_operation_mock),
+        common_operation=common_operation_mock)
     return authenticated
 
 
@@ -147,16 +160,15 @@ def test_schema():
 
 
 @pytest.fixture(scope="function")
-def test_empty_disconnected_state():
+def test_empty_disconnected_state(common_operation_mock):
     return DisconnectedState(
             authenticate_publisher=None,
-            register_subscriber=None,
-            authenticate_serializer=None,
             authenticate_subscriber=None,
+            registered_state=None,
             authenticated=None,
-            register_publisher=None,
-            register_serializer=None,
-            registered_state=None)
+            authenticate_serializer=None,
+            common_operation=common_operation_mock,
+            )
 
 
 @pytest.fixture(scope="function")
@@ -167,7 +179,8 @@ def test_device(test_schema, test_empty_disconnected_state):
         config=[test_schema],
         state=test_empty_disconnected_state,
         data=[data_point],
-        error="")
+        error="",
+        token="")
     return device
 
 @pytest.fixture(scope="function")
@@ -177,6 +190,7 @@ def valid_device_schema():
         "name": "d8ea733a-a788-41ec-9be5-3426b252b66f",
         "error": "",
         "state": "disconnected",
+        "token": "5b67ce6b-ef21-7013-3115-2d6297e1bd2b",
         "config": [{
             "event": {
                 "lowerThreshold": 4.0,

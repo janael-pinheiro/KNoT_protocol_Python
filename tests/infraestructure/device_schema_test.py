@@ -1,10 +1,10 @@
 import pytest
 from marshmallow.exceptions import ValidationError
 
-from knot_protocol.infraestructure.adapter.output.DTO.device_schema import DeviceSchema, SensorEvent, DataPointSchema, SensorSchema
-from knot_protocol.domain.DTO.event import Event
-from knot_protocol.domain.DTO.data_point import DataPointDTO
-from knot_protocol.domain.DTO.schema import SchemaDTO
+from knot_protocol.infrastructure.adapter.output.DTO.device_schema import DeviceSchema, SensorEvent, DataPointSchema, SensorSchema
+from knot_protocol.domain.boundary.output.DTO.event import Event
+from knot_protocol.domain.boundary.output.DTO.data_point import DataPointDTO
+from knot_protocol.domain.boundary.output.DTO.schema import SchemaDTO
 
 
 def test_given_device_entity_serialize(test_device, valid_device_schema):

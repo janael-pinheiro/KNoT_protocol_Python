@@ -4,15 +4,15 @@ from re import search
 from time import sleep
 from typing import List, Any
 
-from knot_protocol.domain.DTO.data_point import DataPointDTO
-from knot_protocol.domain.DTO.device_configuration import ConfigurationDTO
+from knot_protocol.domain.boundary.output.DTO.data_point import DataPointDTO
+from knot_protocol.domain.boundary.output.DTO.device_configuration import ConfigurationDTO
 from knot_protocol.domain.usecase.state import State
 from knot_protocol.domain.usecase.states import (AuthenticatedState,
                                                         ReadyState,
                                                         RegisteredState,
                                                         UpdatedSchemaState)
-from knot_protocol.infraestructure.utils.knot_amqp_options import KNoTPatterns
-from knot_protocol.infraestructure.utils.logger import logger_factory
+from knot_protocol.infrastructure.utils.knot_amqp_options import KNoTPatterns
+from knot_protocol.infrastructure.utils.logger import logger_factory
 
 logger = logger_factory()
 

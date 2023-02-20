@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields
 
 
-class DeviceRegistrationRequestDTO(Schema):
+class DeviceRegistrationRequestSchema(Schema):
     id = fields.Str()
     name = fields.Str()

@@ -1,5 +1,7 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
+
 from marshmallow import Schema
 
 from knot_protocol.domain.boundary.input.subscriber import Subscriber
@@ -9,24 +11,31 @@ from knot_protocol.domain.boundary.output.DTO.publishing_data_dto import \
     PublishingData
 from knot_protocol.domain.boundary.output.DTO.registration_request_dto import \
     RegistrationRequest
-from knot_protocol.domain.boundary.output.DTO.unregistration_request import UnregistrationRequest
+from knot_protocol.domain.boundary.output.DTO.unregistration_request import \
+    UnregistrationRequest
 from knot_protocol.domain.boundary.output.DTO.update_config_request import \
     UpdateConfigRequest
 from knot_protocol.domain.boundary.output.publisher import Publisher
 from knot_protocol.domain.exceptions.device_exception import (
-    AlreadyAuthenticatedException,
-    AlreadyReady,
-    AlreadyRegisteredDeviceException,
-    AlreadyUpdatedSchema,
-    NotAuthenticatedException,
-    NotReadyException,
-    NotRegisteredException,
-    AlreadyUnregisteredDeviceException)
+    AlreadyAuthenticatedException, AlreadyReady,
+    AlreadyRegisteredDeviceException, AlreadyUnregisteredDeviceException,
+    AlreadyUpdatedSchema, NotAuthenticatedException, NotReadyException,
+    NotRegisteredException)
 from knot_protocol.domain.usecase.state import State
 
 
+class CommonOperation(ABC):
+    @abstractmethod
+    def unregister(self):
+        ...
+    
+    @abstractmethod
+    def register(self):
+        ...
+
+
 @dataclass
-class CommonStateOperation:
+class CommonStateOperation(CommonOperation):
     device: Any
     unregister_subscriber: Subscriber
     unregister_publisher: Publisher

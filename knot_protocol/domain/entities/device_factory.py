@@ -1,211 +1,65 @@
-from os import environ
 from typing import List
 
-from pika import BasicProperties, URLParameters
-from pika.exchange_type import ExchangeType
+from marshmallow import Schema
 
-from knot_protocol.domain.DTO.device_configuration import ConfigurationDTO
+from knot_protocol.domain.boundary.input.subscriber import Subscriber
+from knot_protocol.domain.boundary.output.publisher import Publisher
+from knot_protocol.domain.boundary.output.device_persistence_gateway import DevicePersistenceGateway
+from knot_protocol.domain.boundary.output.DTO.device_configuration import ConfigurationDTO
 from knot_protocol.domain.entities.device_entity import DeviceEntity
-from knot_protocol.domain.usecase.states import (
-    AuthenticatedState,
-    DisconnectedState,
-    ReadyState,
-    RegisteredState,
-    UnregisteredState,
-    UpdatedSchemaState,
-    CommonStateOperation)
-from knot_protocol.infraestructure.adapter.input.connection import (
-    AMQPChannel, AMQPConnection, AMQPExchange, AMQPQueue)
-from knot_protocol.infraestructure.adapter.input.subscriber import (
-    AMQPSubscriber, AuthCallback, RegisterCallback, UpdateSchemaCallback, UnregisterCallback)
-from knot_protocol.infraestructure.adapter.output.DTO.device_auth_request_DTO import \
-    DeviceAuthRequestDTO
-from knot_protocol.infraestructure.adapter.output.DTO.device_registration_request_DTO import \
-    DeviceRegistrationRequestDTO
-from knot_protocol.infraestructure.adapter.output.DTO.device_unregistration_request_dto import DeviceUnregistrationRequestDTO
-from knot_protocol.infraestructure.adapter.output.DTO.device_schema import \
-    DataPointsSchema
-from knot_protocol.infraestructure.adapter.output.DTO.update_config_schema import \
-    UpdateConfigRequestSchema
-from knot_protocol.infraestructure.adapter.output.publisher import \
-    AMQPPublisher
-from knot_protocol.infraestructure.adapter.output.repositories.device_repository import \
-    DeviceRepository
-from knot_protocol.infraestructure.utils.knot_amqp_options import (
-    KNoTExchange, KNoTRoutingKey)
-from knot_protocol.infraestructure.utils.logger import logger_factory
+from knot_protocol.domain.usecase.states import (AuthenticatedState,
+                                                 CommonStateOperation,
+                                                 DisconnectedState, ReadyState,
+                                                 RegisteredState,
+                                                 UnregisteredState,
+                                                 UpdatedSchemaState)
 
 
-def amqp_setup_generator():
-    parameters = URLParameters(environ.get("AMQP_URL"))
-    subscriber_connection = AMQPConnection(parameters=parameters).create()
-    publisher_connection = AMQPConnection(parameters=parameters).create()
-    subscriber_channel = AMQPChannel(connection=subscriber_connection).create()
-    BUFFER_LENGTH: int = 1
-    subscriber_channel.basic_qos(prefetch_count=BUFFER_LENGTH)
-    publisher_channel = AMQPChannel(connection=publisher_connection).create()
-    publisher_channel.confirm_delivery()
-    AMQPExchange(
-        channel=subscriber_channel,
-        exchange_name=KNoTExchange.device_exchange.value,
-        exchange_type=ExchangeType.direct).declare()
-    AMQPExchange(
-        channel=subscriber_channel,
-        exchange_name=KNoTExchange.data_sent_exchange.value,
-        exchange_type=ExchangeType.fanout
-    ).declare()
-    yield subscriber_channel, publisher_channel
-    subscriber_channel.close()
-    publisher_channel.close()
-    subscriber_connection.close()
-    publisher_connection.close()
-
-
-def amqp_data_management_setup(logger, knot_token, device_id):
-    amqp_generator = amqp_setup_generator()
-    subscriber_channel, publisher_channel = next(amqp_generator)
-    register_callback = RegisterCallback(token="")
-
-    register_queue_name = f"device_registered_{device_id}"
-    register_subscriber = AMQPSubscriber(
-        channel=subscriber_channel,
-        queue_name=register_queue_name,
-        logger=logger,
-        callback=register_callback,
-        routing_key=KNoTRoutingKey.registered_device.value)
-
-    unregister_queue_name = f"device_unregistered_{device_id}"
-    unregister_callback = UnregisterCallback()
-    unregister_subscriber = AMQPSubscriber(
-        channel=subscriber_channel,
-        callback=unregister_callback,
-        logger=logger,
-        queue_name=unregister_queue_name,
-        routing_key=KNoTRoutingKey.unregistered_device.value
-    )
-
-    auth_queue_name = f"device_auth_queue_{device_id}"
-    auth_callback = AuthCallback()
-    auth_subscriber = AMQPSubscriber(
-        channel=subscriber_channel,
-        queue_name=auth_queue_name,
-        logger=logger,
-        callback=auth_callback,
-        routing_key="device-auth-rpc")
-
-    update_schema_queue_name = f"device_schema_{device_id}"
-    update_schema_callback = UpdateSchemaCallback(config=None)
-    update_config_subscriber = AMQPSubscriber(
-        channel=subscriber_channel,
-        queue_name=update_schema_queue_name,
-        logger=logger,
-        callback=update_schema_callback,
-        routing_key=KNoTRoutingKey.updated_schema.value)
-
-    persistent_message_code = 2
-    amqp_properties = BasicProperties(
-        headers={"Authorization": f"{knot_token}"},
-        delivery_mode=persistent_message_code)
-    register_publisher = AMQPPublisher(
-        channel=publisher_channel,
-        properties=amqp_properties,
-        exchange_name="device",
-        routing_key="device.register",
-        logger=logger
-        )
-
-    unregister_publisher = AMQPPublisher(
-        channel=publisher_channel,
-        properties=amqp_properties,
-        exchange_name="device",
-        routing_key="device.unregister",
-        logger=logger
-    )
-
-    auth_properties = BasicProperties(
-        headers={"Authorization": f"{knot_token}"},
-        reply_to="device-auth-rpc",
-        correlation_id="auth_correlation_id",
-        delivery_mode=persistent_message_code)
-    auth_publisher = AMQPPublisher(
-        channel=publisher_channel,
-        exchange_name="device",
-        routing_key="device.auth",
-        properties=auth_properties,
-        logger=logger)
-
-    update_config_publisher = AMQPPublisher(
-        channel=publisher_channel,
-        exchange_name="device",
-        routing_key="device.config.sent",
-        properties=amqp_properties,
-        logger=logger
-    )
-
-    data_publisher = AMQPPublisher(
-        channel=publisher_channel,
-        exchange_name=KNoTExchange.data_sent_exchange.value,
-        routing_key="",
-        properties=amqp_properties,
-        logger=logger
-    )
-
-    return (
-        register_subscriber,
-        auth_subscriber,
-        update_config_subscriber,
-        register_publisher,
-        auth_publisher,
-        update_config_publisher,
-        data_publisher,
-        unregister_subscriber,
-        unregister_publisher,
-        amqp_generator)
-
-
-def state_machine_assembler(device_id: str):
-    logger = logger_factory()
-    knot_token = environ.get("KNOT_TOKEN")
-    (
-    register_subscriber,
-    auth_subscriber,
-    update_config_subscriber,
-    register_publisher,
-    auth_publisher,
-    update_config_publisher,
-    data_publisher,
-    unregister_subscriber,
-    unregister_publisher,
-    amqp_generator) = amqp_data_management_setup(logger=logger, knot_token=knot_token, device_id=device_id)
+def state_machine_assembler(
+    register_subscriber: Subscriber,
+    auth_subscriber: Subscriber,
+    update_config_subscriber: Subscriber,
+    register_publisher: Publisher,
+    auth_publisher: Publisher,
+    update_config_publisher: Publisher,
+    data_publisher: Publisher,
+    unregister_subscriber: Publisher,
+    unregister_publisher: Publisher,
+    unregister_serializer: Schema,
+    register_serializer: Schema,
+    update_config_serializer: Schema,
+    device_auth_serializer: Schema,
+    publisher_serializer: Schema
+    ):
 
     common_operation = CommonStateOperation(
         unregister_subscriber=unregister_subscriber,
         unregister_publisher=unregister_publisher,
         device=None,
-        unregister_serializer=DeviceUnregistrationRequestDTO(),
+        unregister_serializer=unregister_serializer,
         unregister_state=None,
         register_publisher=register_publisher,
         register_subscriber=register_subscriber,
-        register_serializer=DeviceRegistrationRequestDTO(),
+        register_serializer=register_serializer,
         register_state=None)
     
     ready_state = ReadyState(
         publisher=data_publisher,
-        publisher_serializer=DataPointsSchema(),
+        publisher_serializer=publisher_serializer,
         common_operation=common_operation)
 
     updated_schema_state = UpdatedSchemaState(ready_state=ready_state, common_operation=common_operation)
     authenticated_state = AuthenticatedState(
         publisher=update_config_publisher,
         subscriber=update_config_subscriber,
-        request_serializer=UpdateConfigRequestSchema(),
+        request_serializer=update_config_serializer,
         updated_schema_state=updated_schema_state,
         common_operation=common_operation)
 
     registered_state = RegisteredState(
         publisher=auth_publisher,
         subscriber=auth_subscriber,
-        request_serializer=DeviceAuthRequestDTO(),
+        request_serializer=device_auth_serializer,
         authenticated=authenticated_state,
         common_operation=common_operation)
 
@@ -218,10 +72,10 @@ def state_machine_assembler(device_id: str):
         authenticate_subscriber=auth_subscriber,
         registered_state=registered_state,
         authenticated=authenticated_state,
-        authenticate_serializer=DeviceAuthRequestDTO(),
+        authenticate_serializer=device_auth_serializer,
         common_operation=common_operation)
 
-    return disconnected_state, amqp_generator
+    return disconnected_state
 
 
 class DeviceFactory():
@@ -235,10 +89,42 @@ class DeviceFactory():
             raise Exception("Sensors with duplicate identifiers.")
 
     @classmethod
-    def create(cls, name: str, schema: List[ConfigurationDTO]) -> DeviceEntity:
+    def create(
+        cls,
+        device_id: str,
+        name: str,
+        schema: List[ConfigurationDTO],
+        amqp_generator,
+        register_subscriber: Subscriber,
+        auth_subscriber: Subscriber,
+        update_config_subscriber: Subscriber,
+        register_publisher: Publisher,
+        auth_publisher: Publisher,
+        update_config_publisher: Publisher,
+        data_publisher: Publisher,
+        unregister_subscriber: Publisher,
+        unregister_publisher: Publisher,
+        unregister_serializer: Schema,
+        register_serializer: Schema,
+        update_config_serializer: Schema,
+        device_auth_serializer: Schema,
+        publisher_serializer: Schema) -> DeviceEntity:
         cls.__validate_sensor_uniqueness(schema=schema)
-        device_id = DeviceEntity.create_id()
-        disconnected_state, amqp_generator = state_machine_assembler(device_id=device_id)
+        disconnected_state = state_machine_assembler(
+            auth_publisher=auth_publisher,
+            auth_subscriber=auth_subscriber,
+            data_publisher=data_publisher,
+            device_auth_serializer=device_auth_serializer,
+            publisher_serializer=publisher_serializer,
+            register_publisher=register_publisher,
+            register_subscriber=register_subscriber,
+            register_serializer=register_serializer,
+            unregister_publisher=unregister_publisher,
+            unregister_serializer=unregister_serializer,
+            unregister_subscriber=unregister_subscriber,
+            update_config_publisher=update_config_publisher,
+            update_config_serializer=update_config_serializer,
+            update_config_subscriber=update_config_subscriber)
 
         device = DeviceEntity(
             device_id=device_id,
@@ -253,9 +139,39 @@ class DeviceFactory():
         return device
 
     @classmethod
-    def load_existing_device(cls, device_repository: DeviceRepository) -> DeviceEntity:
-        device = device_repository.load()
-        disconnected_state, amqp_generator = state_machine_assembler(device_id=device.device_id)
+    def configure_existing_device(
+        cls,
+        device: DeviceEntity,
+        amqp_generator,
+        register_subscriber: Subscriber,
+        auth_subscriber: Subscriber,
+        update_config_subscriber: Subscriber,
+        register_publisher: Publisher,
+        auth_publisher: Publisher,
+        update_config_publisher: Publisher,
+        data_publisher: Publisher,
+        unregister_subscriber: Publisher,
+        unregister_publisher: Publisher,
+        unregister_serializer: Schema,
+        register_serializer: Schema,
+        update_config_serializer: Schema,
+        device_auth_serializer: Schema,
+        publisher_serializer: Schema) -> DeviceEntity:
+        disconnected_state = state_machine_assembler(
+            auth_publisher=auth_publisher,
+            auth_subscriber=auth_subscriber,
+            data_publisher=data_publisher,
+            device_auth_serializer=device_auth_serializer,
+            publisher_serializer=publisher_serializer,
+            register_publisher=register_publisher,
+            register_subscriber=register_subscriber,
+            register_serializer=register_serializer,
+            unregister_publisher=unregister_publisher,
+            unregister_serializer=unregister_serializer,
+            unregister_subscriber=unregister_subscriber,
+            update_config_publisher=update_config_publisher,
+            update_config_serializer=update_config_serializer,
+            update_config_subscriber=update_config_subscriber)
         device.amqp_generator = amqp_generator
         device.transition_to_state(disconnected_state)
         return device

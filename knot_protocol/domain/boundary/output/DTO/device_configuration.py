@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from knot_protocol.domain.DTO.schema import SchemaDTO
-from knot_protocol.domain.DTO.event import Event
+from knot_protocol.domain.boundary.output.DTO.schema import SchemaDTO
+from knot_protocol.domain.boundary.output.DTO.event import Event
 
 
 @dataclass(frozen=True, eq=False)

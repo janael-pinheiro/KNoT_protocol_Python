@@ -1,7 +1,7 @@
 from marshmallow import Schema, fields, post_load
 
 from knot_protocol.domain.boundary.input.DTO.config_response_dto import ConfigurationUpdateResponseDTO
-from knot_protocol.infraestructure.adapter.output.DTO.device_schema import SensorConfiguration
+from knot_protocol.infrastructure.adapter.output.DTO.device_schema import SensorConfiguration
 
 
 class ConfigUpdateResponseSchema(Schema):

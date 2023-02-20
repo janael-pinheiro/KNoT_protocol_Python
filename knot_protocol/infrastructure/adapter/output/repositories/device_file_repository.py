@@ -3,14 +3,13 @@ from dataclasses import dataclass
 from yaml import safe_dump, safe_load
 
 from knot_protocol.domain.entities.device_entity import DeviceEntity
-from knot_protocol.infraestructure.adapter.output.DTO.device_schema import \
+from knot_protocol.infrastructure.adapter.output.DTO.device_schema import \
     DeviceSchema
-from knot_protocol.infraestructure.adapter.output.repositories.device_repository import \
-    DeviceRepository
+from knot_protocol.domain.boundary.output.device_persistence_gateway import DevicePersistenceGateway
 
 
 @dataclass
-class DeviceFileRepository(DeviceRepository):
+class DeviceFileRepository(DevicePersistenceGateway):
     filepath: str
 
     def save(self, device: DeviceEntity) -> None:

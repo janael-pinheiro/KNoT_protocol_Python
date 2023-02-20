@@ -9,7 +9,7 @@ from tenacity import retry, retry_if_exception_type
 from tenacity.wait import wait_exponential
 
 from knot_protocol.domain.boundary.output.publisher import Publisher
-from knot_protocol.infraestructure.adapter.input.connection import (
+from knot_protocol.infrastructure.adapter.input.amqp_connection import (
     AMQPChannel, AMQPConnection)
 
 

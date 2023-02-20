@@ -2,7 +2,7 @@ from json import loads
 from typing import Dict
 from uuid import uuid4
 import yaml
-from knot_protocol.infraestructure.adapter.output.DTO.device_schema import SchemaConfiguration
+from knot_protocol.infrastructure.adapter.output.DTO.device_schema import SchemaConfiguration
 
 
 def json_parser(json_content: Dict[str, str]) -> Dict[str, str]:
